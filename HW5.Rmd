@@ -1,0 +1,109 @@
+---
+title: "Machine Learing Hw5"
+author: "Ekta Chaudhary"
+date: "30/04/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ISLR)
+library(mlbench)
+library(caret)
+library(e1071) 
+```
+
+# Data
+
+This problem involves the OJ data set which is part of the ISLR package. The data contains
+1070 purchases where the customer either purchased Citrus Hill or Minute Maid Orange
+Juice. A number of characteristics of the customer and product are recorded.Create a
+training set containing a random sample of 800 observations, and a test set containing the
+remaining observations.
+
+```{r}
+data(OJ)
+set.seed(1)
+rowTrain = createDataPartition(y = OJ$Purchase,
+                                p = 0.747,
+                                list = FALSE)
+ctrl <- trainControl(method = "repeatedcv")
+```
+
+# Question 1)  Fit a support vector classifier (linear kernel) to the training data with Purchase as the response and the other variables as predictors. What are the training and test error rates?
+
+```{r}
+set.seed(1)
+svml.fit <- train(Purchase ~., 
+                  data = OJ[rowTrain,], 
+                  method = "svmLinear2",
+                  preProcess = c("center", "scale"), 
+                  tuneGrid = data.frame(cost = exp(seq(-10, 1, len = 50))),
+                  trControl = ctrl)
+ggplot(svml.fit, highlight = TRUE)
+```
+
+# Calculating the training error rate:
+
+```{r}
+pred.svml_training <- predict(svml.fit, newdata = OJ[rowTrain,])
+confusionMatrix(data = pred.svml_training, 
+                reference = OJ$Purchase[rowTrain])
+linear_training_error_rate = mean(pred.svml_training != OJ$Purchase[rowTrain]) * 100
+linear_training_error_rate
+```
+
+#The trainig error rate is 16.125%
+
+# Finding the test error rate:
+
+```{r}
+pred.svml_testing <- predict(svml.fit, newdata = OJ[-rowTrain,])
+confusionMatrix(data = pred.svml_testing, 
+                reference = OJ$Purchase[-rowTrain])
+linear_testing_error_rate = mean(pred.svml_testing != OJ$Purchase[-rowTrain]) * 100
+linear_testing_error_rate
+```
+
+The testing error rate is 15.18519%
+
+# Question 2) Fit a support vector machine with a radial kernel to the training data. What are the training and test error rates?
+
+```{r}
+svmr.grid <- expand.grid(C = exp(seq(-5, 2, len = 6)),
+                         sigma = exp(seq(-6,-2, len = 6))) 
+set.seed(1)             
+svmrad.fit <- train(Purchase ~., OJ, 
+                  subset = rowTrain,
+                  method = "svmRadial", 
+                  preProcess = c("center", "scale"),
+                  tuneGrid = svmr.grid,
+                  trControl = ctrl)
+ggplot(svmrad.fit, highlight = TRUE)
+```
+
+# Calculating the Training error rate:
+
+```{r}
+pred.svmrad_training <- predict(svmrad.fit, newdata = OJ[rowTrain,])
+confusionMatrix(data = pred.svmrad_training, 
+                reference = OJ$Purchase[rowTrain])
+radial_training_error_rate = mean(pred.svmrad_training != OJ$Purchase[rowTrain]) * 100
+radial_training_error_rate
+```
+
+The training error rate is 15.875%
+
+# Calculating the Testing error rate
+
+```{r}
+pred.svmrad_testing <- predict(svmrad.fit, newdata = OJ[-rowTrain,])
+confusionMatrix(data = pred.svmrad_testing, 
+                reference = OJ$Purchase[-rowTrain])
+radial_testing_error_rate = mean(pred.svmrad_testing != OJ$Purchase[-rowTrain]) * 100
+radial_testing_error_rate
+```
+# The testing error rate is 15.92%
